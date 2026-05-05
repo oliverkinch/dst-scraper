@@ -399,11 +399,12 @@ def load_cache() -> set[str]:
 
 
 def load_articles_with_tables() -> list[dict]:
-    """Load only articles that have at least one inline table."""
+    """Load nyt articles. If article_tables_cache.jsonl exists, limit to those
+    with at least one inline table; otherwise process all nyt articles."""
     if not PROGRESS_FILE.exists():
         raise FileNotFoundError(f"No progress file at {PROGRESS_FILE}")
 
-    # Build set of URLs that have inline tables
+    # Build set of URLs that have inline tables (optional filter)
     urls_with_tables: set[str] = set()
     if ARTICLE_TABLES_FILE.exists():
         for line in ARTICLE_TABLES_FILE.read_text(encoding="utf-8").splitlines():
@@ -415,6 +416,7 @@ def load_articles_with_tables() -> list[dict]:
                     urls_with_tables.add(r["url"])
             except Exception:
                 pass
+        print(f"  (filtering to {len(urls_with_tables)} articles with inline tables)")
 
     articles: list[dict] = []
     for line in PROGRESS_FILE.read_text(encoding="utf-8").splitlines():
@@ -424,8 +426,11 @@ def load_articles_with_tables() -> list[dict]:
             r = json.loads(line)
         except Exception:
             continue
-        if r.get("status") == "ok" and r.get("content_type") == "nyt" and r["url"] in urls_with_tables:
-            articles.append(r)
+        if r.get("status") != "ok" or r.get("content_type") != "nyt":
+            continue
+        if urls_with_tables and r["url"] not in urls_with_tables:
+            continue
+        articles.append(r)
     return articles
 
 
