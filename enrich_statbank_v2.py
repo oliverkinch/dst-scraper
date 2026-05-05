@@ -316,7 +316,7 @@ def extract_tables_from_statbank_section(html: str) -> list[dict]:
 
     if table_list:
         for a in table_list.find_all("a", href=STATBANK_HREF_RE):
-            m = STATBANK_HREF_RE.search(a.get("href", ""))
+            m = STATBANK_HREF_RE.search(str(a.get("href", "")))
             if not m:
                 continue
             code = m.group(1).upper()
@@ -338,7 +338,7 @@ def extract_tables_from_statbank_section(html: str) -> list[dict]:
     else:
         # Fallback: all statistikbanken links on page
         for a in soup.find_all("a", href=True):
-            m = STATBANK_HREF_RE.search(a["href"])
+            m = STATBANK_HREF_RE.search(str(a["href"]))
             if m:
                 code = m.group(1).upper()
                 if _is_valid_code(code) and code not in seen:
